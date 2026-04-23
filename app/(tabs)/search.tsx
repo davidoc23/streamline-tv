@@ -7,6 +7,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useShows } from '@/hooks/use-shows';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 type SearchResult = {
   id: string;
@@ -21,6 +22,10 @@ const stripHtml = (html: string) => html.replace(/<[^>]+>/g, '');
 export default function SearchScreen() {
   const router = useRouter();
   const { subscribeShow, unsubscribeShow, isSubscribed } = useShows();
+  const searchTextColor = useThemeColor({}, 'text');
+  const searchPlaceholderColor = useThemeColor({ light: '#7a7a7a', dark: '#9BA1A6' }, 'icon');
+  const searchSurfaceColor = useThemeColor({ light: '#ffffff', dark: '#1f2224' }, 'background');
+  const searchBorderColor = useThemeColor({ light: '#c9c9c9', dark: '#3a3f42' }, 'icon');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,11 +88,18 @@ export default function SearchScreen() {
       <View style={styles.searchBar}>
         <TextInput
           placeholder="Search for a show"
-          placeholderTextColor="#7a7a7a"
+          placeholderTextColor={searchPlaceholderColor}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={searchShows}
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            {
+              color: searchTextColor,
+              backgroundColor: searchSurfaceColor,
+              borderColor: searchBorderColor,
+            },
+          ]}
         />
         <Pressable onPress={searchShows} style={styles.searchButton}>
           <ThemedText type="defaultSemiBold">Search</ThemedText>
@@ -173,11 +185,9 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#c9c9c9',
     borderRadius: 14,
     padding: 12,
     minHeight: 48,
-    color: '#111111',
   },
   searchButton: {
     paddingVertical: 12,

@@ -1,5 +1,6 @@
-import { Link, useRouter } from 'expo-router';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -53,101 +54,202 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <View style={styles.container}>
-      <ThemedText type="title">Settings</ThemedText>
-      <ThemedText>
-        Manage appearance, review the privacy policy, and delete your account from this device.
-      </ThemedText>
-
-      <ThemedView style={styles.card}>
-        <ThemedText type="defaultSemiBold">Appearance</ThemedText>
-        <ThemedText>Current theme: {appliedScheme ?? 'light'}</ThemedText>
-        <View style={styles.buttonRow}>
-          {preferenceButtons.map((button) => {
-            const isSelected = preference === button.value;
-
-            return (
-              <Pressable
-                key={button.value}
-                onPress={() => {
-                  void setColorSchemePreference(button.value);
-                }}
-                style={[styles.optionButton, isSelected ? styles.optionButtonActive : undefined]}
-              >
-                <ThemedText type="defaultSemiBold">{button.label}</ThemedText>
-              </Pressable>
-            );
-          })}
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <ThemedText type="title">Settings</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Manage appearance, review the privacy policy, and delete your account from this device.
+          </ThemedText>
         </View>
-      </ThemedView>
 
-      <ThemedView style={styles.card}>
-        <ThemedText type="defaultSemiBold">Privacy</ThemedText>
-        <ThemedText style={styles.body}>
-          Read how the app stores account and watch data in the privacy policy.
-        </ThemedText>
-        <Link href="/privacy-policy" style={styles.link}>
-          Read privacy policy
-        </Link>
-      </ThemedView>
+        <View style={styles.sectionLabelRow}>
+          <ThemedText type="subtitle">Appearance</ThemedText>
+          <ThemedText style={styles.sectionHint}>Current theme: {appliedScheme ?? 'light'}</ThemedText>
+        </View>
+        <ThemedView style={styles.groupCard}>
+          <View style={styles.groupRows}>
+            {preferenceButtons.map((button) => {
+              const isSelected = preference === button.value;
 
-      <ThemedView style={styles.card}>
-        <ThemedText type="defaultSemiBold">Account</ThemedText>
-        <ThemedText style={styles.body}>{user?.email ?? 'No signed-in account found.'}</ThemedText>
-        <Pressable onPress={() => void signOut()} style={styles.secondaryButton}>
-          <ThemedText type="defaultSemiBold">Sign out</ThemedText>
-        </Pressable>
-        <Pressable onPress={handleDeleteAccount} style={styles.dangerButton}>
-          <ThemedText type="defaultSemiBold">Delete account</ThemedText>
-        </Pressable>
-      </ThemedView>
-    </View>
+              return (
+                <Pressable
+                  key={button.value}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
+                  onPress={() => {
+                    void setColorSchemePreference(button.value);
+                  }}
+                  style={({ pressed }) => [
+                    styles.rowButton,
+                    isSelected ? styles.rowButtonSelected : undefined,
+                    pressed ? styles.rowButtonPressed : undefined,
+                  ]}
+                >
+                  <ThemedText type="defaultSemiBold">{button.label}</ThemedText>
+                  <View style={styles.rowTrailing}>
+                    {isSelected ? <ThemedText style={styles.checkMark}>✓</ThemedText> : null}
+                    <ThemedText style={styles.chevron}>›</ThemedText>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ThemedView>
+
+        <View style={styles.sectionLabelRow}>
+          <ThemedText type="subtitle">Privacy</ThemedText>
+        </View>
+        <ThemedView style={styles.groupCard}>
+          <View style={styles.groupRows}>
+            <Pressable
+              accessibilityRole="button"
+              android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
+              onPress={() => {
+                router.push('/privacy-policy');
+              }}
+              style={({ pressed }) => [styles.rowButton, pressed ? styles.rowButtonPressed : undefined]}
+            >
+              <View style={styles.rowTextBlock}>
+                <ThemedText type="defaultSemiBold">Privacy policy</ThemedText>
+                <ThemedText style={styles.rowBody}>
+                  Read how the app stores account and watch data in the privacy policy.
+                </ThemedText>
+              </View>
+              <View style={styles.rowTrailing}>
+                <ThemedText type="defaultSemiBold">Open</ThemedText>
+                <ThemedText style={styles.chevron}>›</ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        </ThemedView>
+
+        <View style={styles.sectionLabelRow}>
+          <ThemedText type="subtitle">Account</ThemedText>
+        </View>
+        <ThemedView style={styles.groupCard}>
+          <View style={styles.groupRows}>
+            <Pressable
+              accessibilityRole="button"
+              android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
+              onPress={() => void signOut()}
+              style={({ pressed }) => [styles.rowButton, pressed ? styles.rowButtonPressed : undefined]}
+            >
+              <View style={styles.rowTextBlock}>
+                <ThemedText type="defaultSemiBold">Signed in as</ThemedText>
+                <ThemedText style={styles.rowBody}>{user?.email ?? 'No signed-in account found.'}</ThemedText>
+              </View>
+              <View style={styles.rowTrailing}>
+                <ThemedText type="defaultSemiBold">Sign out</ThemedText>
+                <ThemedText style={styles.chevron}>›</ThemedText>
+              </View>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
+              onPress={handleDeleteAccount}
+              style={({ pressed }) => [
+                styles.rowButton,
+                styles.dangerRowButton,
+                pressed ? styles.rowButtonPressed : undefined,
+              ]}
+            >
+              <ThemedText type="defaultSemiBold" style={styles.dangerText}>
+                Delete account
+              </ThemedText>
+              <ThemedText style={[styles.chevron, styles.dangerText]}>›</ThemedText>
+            </Pressable>
+          </View>
+        </ThemedView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    padding: 24,
-    gap: 16,
+    backgroundColor: 'transparent',
   },
-  card: {
-    gap: 12,
-    padding: 16,
-    borderRadius: 16,
+  container: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+    gap: 22,
+  },
+  header: {
+    gap: 10,
+    paddingHorizontal: 8,
+    marginBottom: 4,
+  },
+  subtitle: {
+    lineHeight: 22,
+    opacity: 0.9,
+  },
+  sectionLabelRow: {
+    paddingHorizontal: 8,
+    gap: 5,
+    marginTop: 2,
+  },
+  sectionHint: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  groupCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  body: {
-    lineHeight: 22,
+  groupRows: {
+    gap: 1,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
-  buttonRow: {
+  rowButton: {
+    alignSelf: 'stretch',
+    minHeight: 64,
+    paddingHorizontal: 18,
+    paddingVertical: 17,
+    backgroundColor: 'rgba(255,255,255,0.07)',
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  rowButtonPressed: {
+    opacity: 0.92,
+  },
+  rowButtonSelected: {
+    backgroundColor: 'rgba(10,126,164,0.18)',
+  },
+  rowTextBlock: {
+    flex: 1,
+    gap: 5,
+  },
+  rowBody: {
+    lineHeight: 20,
+    opacity: 0.82,
+  },
+  rowTrailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
-    flexWrap: 'wrap',
   },
-  optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  optionButtonActive: {
-    backgroundColor: '#0a7ea4',
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  dangerButton: {
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingVertical: 12,
-    backgroundColor: '#8b1e3f',
-  },
-  link: {
+  checkMark: {
     color: '#0a7ea4',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  chevron: {
+    fontSize: 22,
+    lineHeight: 22,
+    opacity: 0.45,
+  },
+  dangerRowButton: {
+    backgroundColor: 'rgba(139, 30, 63, 0.18)',
+  },
+  dangerText: {
+    color: '#ff7d9a',
   },
 });

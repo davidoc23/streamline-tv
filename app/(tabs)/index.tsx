@@ -14,6 +14,17 @@ export default function HomeScreen() {
   const { user, signOut } = useAuth();
   const { subscribedShows, loading } = useShows();
 
+  const isFutureAirdate = (airdate?: string) => {
+    if (!airdate) {
+      return false;
+    }
+
+    const parsedAirdate = new Date(`${airdate}T00:00:00`);
+    const today = new Date();
+    const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return parsedAirdate > todayAtMidnight;
+  };
+
   const getContinueWatchingText = (show: {
     nextEpisode?: string;
     nextEpisodeSeason?: number;
@@ -28,7 +39,8 @@ export default function HomeScreen() {
       show.nextEpisodeTitle
     ) {
       const airdateText = show.nextEpisodeAirdate ? ` on ${show.nextEpisodeAirdate}` : '';
-      return `You can watch the next episode: S${show.nextEpisodeSeason}E${show.nextEpisodeEpisode}: ${show.nextEpisodeTitle}${airdateText}`;
+      const prefix = isFutureAirdate(show.nextEpisodeAirdate) ? 'Coming soon:' : 'You can watch the next episode:';
+      return `${prefix} S${show.nextEpisodeSeason}E${show.nextEpisodeEpisode}: ${show.nextEpisodeTitle}${airdateText}`;
     }
 
     if (show.nextEpisode) {
@@ -110,7 +122,9 @@ export default function HomeScreen() {
                 {(show.nextEpisodeSeason != null && show.nextEpisodeEpisode != null) ||
                 (show.nextEpisode && !show.nextEpisode.toLowerCase().includes('you have watched all episodes')) ? (
                   <ThemedView style={styles.badge}>
-                    <ThemedText type="defaultSemiBold">New episode available</ThemedText>
+                    <ThemedText type="defaultSemiBold">
+                      {isFutureAirdate(show.nextEpisodeAirdate) ? 'Coming soon' : 'New episode available'}
+                    </ThemedText>
                   </ThemedView>
                 ) : null}
                 {show.streamingInfo ? <ThemedText style={styles.metaText}>{show.streamingInfo}</ThemedText> : null}

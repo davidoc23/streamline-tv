@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Link, Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -307,6 +307,29 @@ export default function DetailsScreen() {
     return `${episodeLabel}: ${episode.name}${dateLabel}`;
   }, []);
 
+  const formatNextEpisodeMessage = useCallback(
+    (episode: EpisodedItem | undefined) => {
+      if (!episode) {
+        return 'Choose watched episodes to get a recommendation.';
+      }
+
+      const episodeLabel = formatEpisodeRecommendation(episode);
+      if (!episodeLabel) {
+        return 'Choose watched episodes to get a recommendation.';
+      }
+
+      if (episode.airdate) {
+        const airDate = new Date(`${episode.airdate}T00:00:00`);
+        if (airDate > today) {
+          return `Coming soon: ${episodeLabel}`;
+        }
+      }
+
+      return `You can watch the next episode: ${episodeLabel}`;
+    },
+    [formatEpisodeRecommendation, today],
+  );
+
   const nextToWatch = useMemo(() => {
     if (episodes.length === 0) {
       return 'Choose watched episodes to get a recommendation.';
@@ -316,8 +339,8 @@ export default function DetailsScreen() {
       return 'You have watched all episodes.';
     }
 
-    return `You can watch the next episode: ${formatEpisodeRecommendation(nextEpisodeItem)}`;
-  }, [episodes, formatEpisodeRecommendation, nextEpisodeItem]);
+    return formatNextEpisodeMessage(nextEpisodeItem);
+  }, [episodes, formatNextEpisodeMessage, nextEpisodeItem]);
 
   const getSavedShow = useCallback(
     (watched: { season: number; episode: number }[]) => ({
@@ -325,12 +348,11 @@ export default function DetailsScreen() {
         const nextEpisodeForWatched = getNextEpisodeForWatched(watched);
 
         return {
-          nextEpisode:
-            watched.length === 0
+          nextEpisode: nextEpisodeForWatched
+            ? formatNextEpisodeMessage(nextEpisodeForWatched)
+            : watched.length === 0
               ? 'Choose watched episodes to get a recommendation.'
-              : nextEpisodeForWatched
-                ? `You can watch the next episode: ${formatEpisodeRecommendation(nextEpisodeForWatched)}`
-                : 'You have watched all episodes.',
+              : 'You have watched all episodes.',
           nextEpisodeSeason: nextEpisodeForWatched?.season,
           nextEpisodeEpisode: nextEpisodeForWatched?.number,
           nextEpisodeTitle: nextEpisodeForWatched?.name,
@@ -356,7 +378,7 @@ export default function DetailsScreen() {
       lastWatchedEpisode: watched.length > 0 ? watched[watched.length - 1]?.episode : undefined,
       watchedEpisodes: watched,
     }),
-    [formatEpisodeRecommendation, getNextEpisodeForWatched, show, totalEpisodes, totalSeasons],
+    [formatNextEpisodeMessage, getNextEpisodeForWatched, show, totalEpisodes, totalSeasons],
   );
 
   const saveShowProgress = useCallback(
@@ -515,9 +537,6 @@ export default function DetailsScreen() {
         </ThemedText>
       </Pressable>
 
-      <Link href="/">
-        <ThemedText type="link">Back to Home</ThemedText>
-      </Link>
     </ScrollView>
   );
 }

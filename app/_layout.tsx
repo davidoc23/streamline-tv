@@ -21,8 +21,14 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="details" options={{ title: 'Details' }} />
-            <Stack.Screen name="privacy-policy" options={{ title: 'Privacy Policy' }} />
+            <Stack.Screen
+              name="details"
+              options={{ title: 'Details', headerBackTitle: 'Home' }}
+            />
+            <Stack.Screen
+              name="privacy-policy"
+              options={{ title: 'Privacy Policy', headerBackTitle: 'Settings' }}
+            />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
         </ShowsProvider>
