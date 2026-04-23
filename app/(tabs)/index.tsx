@@ -6,18 +6,36 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAuth } from '@/hooks/use-auth';
 import { useShows } from '@/hooks/use-shows';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { subscribedShows } = useShows();
+  const { user, signOut } = useAuth();
+  const { subscribedShows, loading } = useShows();
 
-  const getContinueWatchingText = (show: { nextEpisode?: string; lastWatched?: string }) => {
+  const getContinueWatchingText = (show: {
+    nextEpisode?: string;
+    nextEpisodeSeason?: number;
+    nextEpisodeEpisode?: number;
+    nextEpisodeTitle?: string;
+    nextEpisodeAirdate?: string;
+    lastWatched?: string;
+  }) => {
+    if (
+      show.nextEpisodeSeason != null &&
+      show.nextEpisodeEpisode != null &&
+      show.nextEpisodeTitle
+    ) {
+      const airdateText = show.nextEpisodeAirdate ? ` on ${show.nextEpisodeAirdate}` : '';
+      return `You can watch the next episode: S${show.nextEpisodeSeason}E${show.nextEpisodeEpisode}: ${show.nextEpisodeTitle}${airdateText}`;
+    }
+
     if (show.nextEpisode) {
-      if (show.nextEpisode.toLowerCase().includes('you have watched everything')) {
+      if (show.nextEpisode.toLowerCase().includes('you have watched all episodes')) {
         return 'All caught up — check again later';
       }
-      return `Continue watching: ${show.nextEpisode}`;
+      return show.nextEpisode;
     }
 
     if (show.lastWatched) {
@@ -41,6 +59,16 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
 
+      <ThemedView style={styles.accountBar}>
+        <View style={styles.accountCopy}>
+          <ThemedText type="defaultSemiBold">Signed in as</ThemedText>
+          <ThemedText>{user?.email ?? 'Unknown account'}</ThemedText>
+        </View>
+        <Pressable onPress={signOut} style={styles.signOutButton}>
+          <ThemedText type="defaultSemiBold">Sign out</ThemedText>
+        </Pressable>
+      </ThemedView>
+
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle">Your subscribed shows</ThemedText>
         <ThemedText>
@@ -49,7 +77,14 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
 
-      {subscribedShows.length === 0 ? (
+      {loading ? (
+        <ThemedView style={styles.emptyState}>
+          <ThemedText type="subtitle">Loading your account</ThemedText>
+          <ThemedText>Fetching your subscribed shows and watch progress…</ThemedText>
+        </ThemedView>
+      ) : null}
+
+      {!loading && subscribedShows.length === 0 ? (
         <ThemedView style={styles.emptyState}>
           <ThemedText type="subtitle">No shows yet</ThemedText>
           <ThemedText>Search for a show to build your personal TV dashboard.</ThemedText>
@@ -72,7 +107,8 @@ export default function HomeScreen() {
                 <ThemedText type="defaultSemiBold" style={styles.metaText}>
                   {getContinueWatchingText(show)}
                 </ThemedText>
-                {show.nextEpisode && !show.nextEpisode.toLowerCase().includes('you have watched everything') ? (
+                {(show.nextEpisodeSeason != null && show.nextEpisodeEpisode != null) ||
+                (show.nextEpisode && !show.nextEpisode.toLowerCase().includes('you have watched all episodes')) ? (
                   <ThemedView style={styles.badge}>
                     <ThemedText type="defaultSemiBold">New episode available</ThemedText>
                   </ThemedView>
@@ -96,6 +132,28 @@ const styles = StyleSheet.create({
   section: {
     gap: 8,
     marginBottom: 16,
+  },
+  accountBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: '#d0d0d0',
+    marginBottom: 16,
+  },
+  accountCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  signOutButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   emptyState: {
     gap: 12,

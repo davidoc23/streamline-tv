@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAuth } from '@/hooks/use-auth';
 import { useShows } from '@/hooks/use-shows';
 
 type EpisodedItem = {
@@ -31,6 +32,7 @@ type ShowDetails = {
 
 export default function DetailsScreen() {
   const params = useLocalSearchParams();
+  const { user, loading: authLoading } = useAuth();
   const { subscribeShow, unsubscribeShow, isSubscribed, getShowById } = useShows();
   const showId = String(params.id ?? '');
 
@@ -267,7 +269,35 @@ export default function DetailsScreen() {
       .join(', ');
   }, [watchedEpisodes]);
 
-  const formatEpisodeRecommendation = (episode: EpisodedItem | undefined) => {
+  const nextEpisodeItem = useMemo(() => {
+    if (episodes.length === 0) {
+      return undefined;
+    }
+
+    const sortedEpisodes = episodes
+      .slice()
+      .sort((a, b) => (a.season === b.season ? a.number - b.number : a.season - b.season));
+
+    return sortedEpisodes.find((episode) => !isEpisodeWatched(episode));
+  }, [episodes, isEpisodeWatched]);
+
+  const getNextEpisodeForWatched = useCallback(
+    (watched: { season: number; episode: number }[]) => {
+      if (episodes.length === 0) {
+        return undefined;
+      }
+
+      const watchedSetForNext = new Set(watched.map((item) => `${item.season}-${item.episode}`));
+      const sortedEpisodes = episodes
+        .slice()
+        .sort((a, b) => (a.season === b.season ? a.number - b.number : a.season - b.season));
+
+      return sortedEpisodes.find((episode) => !watchedSetForNext.has(`${episode.season}-${episode.number}`));
+    },
+    [episodes],
+  );
+
+  const formatEpisodeRecommendation = useCallback((episode: EpisodedItem | undefined) => {
     if (!episode) {
       return undefined;
     }
@@ -275,40 +305,38 @@ export default function DetailsScreen() {
     const episodeLabel = `S${episode.season}E${episode.number}`;
     const dateLabel = episode.airdate ? ` on ${episode.airdate}` : '';
     return `${episodeLabel}: ${episode.name}${dateLabel}`;
-  };
+  }, []);
 
   const nextToWatch = useMemo(() => {
     if (episodes.length === 0) {
       return 'Choose watched episodes to get a recommendation.';
     }
 
-    const sortedEpisodes = episodes
-      .slice()
-      .sort((a, b) => (a.season === b.season ? a.number - b.number : a.season - b.season));
-
-    if (watchedEpisodes.length === 0) {
-      const nextFuture = sortedEpisodes.find((episode) => {
-        if (!episode.airdate) {
-          return false;
-        }
-
-        const airDate = new Date(`${episode.airdate}T00:00:00`);
-        return airDate > today;
-      });
-
-      return (
-        formatEpisodeRecommendation(nextFuture) ??
-        formatEpisodeRecommendation(sortedEpisodes[0]) ??
-        'Choose watched episodes to get a recommendation.'
-      );
+    if (!nextEpisodeItem) {
+      return 'You have watched all episodes.';
     }
 
-    const next = sortedEpisodes.find((episode) => !isEpisodeWatched(episode));
-    return next ? formatEpisodeRecommendation(next) : 'You have watched everything.';
-  }, [episodes, watchedEpisodes, isEpisodeWatched, today]);
+    return `You can watch the next episode: ${formatEpisodeRecommendation(nextEpisodeItem)}`;
+  }, [episodes, formatEpisodeRecommendation, nextEpisodeItem]);
 
   const getSavedShow = useCallback(
     (watched: { season: number; episode: number }[]) => ({
+      ...(() => {
+        const nextEpisodeForWatched = getNextEpisodeForWatched(watched);
+
+        return {
+          nextEpisode:
+            watched.length === 0
+              ? 'Choose watched episodes to get a recommendation.'
+              : nextEpisodeForWatched
+                ? `You can watch the next episode: ${formatEpisodeRecommendation(nextEpisodeForWatched)}`
+                : 'You have watched all episodes.',
+          nextEpisodeSeason: nextEpisodeForWatched?.season,
+          nextEpisodeEpisode: nextEpisodeForWatched?.number,
+          nextEpisodeTitle: nextEpisodeForWatched?.name,
+          nextEpisodeAirdate: nextEpisodeForWatched?.airdate,
+        };
+      })(),
       id: show.id,
       name: show.name,
       overview: show.overview,
@@ -317,7 +345,6 @@ export default function DetailsScreen() {
       streamingInfo: show.streamingInfo,
       seasons: totalSeasons,
       episodes: totalEpisodes,
-      nextEpisode: nextToWatch,
       lastWatched: watched.length > 0
         ? watched
             .slice()
@@ -325,10 +352,11 @@ export default function DetailsScreen() {
             .map((item) => `S${item.season}E${item.episode}`)
             .join(', ')
         : 'None selected',
-      lastWatchedSeason: selectedSeason ?? undefined,
+      lastWatchedSeason: watched.length > 0 ? watched[watched.length - 1]?.season : undefined,
+      lastWatchedEpisode: watched.length > 0 ? watched[watched.length - 1]?.episode : undefined,
       watchedEpisodes: watched,
     }),
-    [show, totalSeasons, totalEpisodes, nextToWatch, selectedSeason],
+    [formatEpisodeRecommendation, getNextEpisodeForWatched, show, totalEpisodes, totalSeasons],
   );
 
   const saveShowProgress = useCallback(
@@ -340,21 +368,27 @@ export default function DetailsScreen() {
 
   const toggleEpisodeWatched = useCallback(
     (episode: EpisodedItem) => {
-      setWatchedEpisodes((current) => {
-        const exists = current.some(
-          (item) => item.season === episode.season && item.episode === episode.number,
-        );
+      const nextWatched = watchedEpisodes.some(
+        (item) => item.season === episode.season && item.episode === episode.number,
+      )
+        ? watchedEpisodes.filter(
+            (item) => item.season !== episode.season || item.episode !== episode.number,
+          )
+        : [...watchedEpisodes, { season: episode.season, episode: episode.number }];
 
-        const nextWatched = exists
-          ? current.filter((item) => item.season !== episode.season || item.episode !== episode.number)
-          : [...current, { season: episode.season, episode: episode.number }];
-
-        saveShowProgress(nextWatched);
-        return nextWatched;
-      });
+      setWatchedEpisodes(nextWatched);
+      saveShowProgress(nextWatched);
     },
-    [saveShowProgress],
+    [saveShowProgress, watchedEpisodes],
   );
+
+  if (authLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <ScrollView style={styles.wrapper} contentContainerStyle={styles.container}>
