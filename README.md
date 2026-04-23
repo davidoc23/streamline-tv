@@ -1,50 +1,83 @@
-# Welcome to your Expo app 👋
+# StreamlineTV
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native app built with Expo Router for searching TV shows, subscribing to favorites, and tracking watched episodes with next-episode recommendations.
 
-## Get started
+## Overview
 
-1. Install dependencies
+StreamlineTV connects to the public TVMaze API and lets users build a lightweight watchlist. The app supports:
 
-   ```bash
-   npm install
-   ```
+- searching shows by title
+- subscribing to favorite shows
+- tracking watched episodes per season
+- recommending the next unwatched episode
+- surfacing the latest aired episode and upcoming episode info
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+- TVMaze search results with show summaries and posters
+- subscribe / unsubscribe from shows
+- home dashboard with continue-watching status and new episode badges
+- details screen with seasons, episode counts, and episode progress tracking
+- season tabs and episode chips for marking watched episodes
+- automatic progress saving when a subscribed show is updated
+- latest aired episode badge and aired episode list
 
-In the output, you'll find options to open the app in a
+## Project structure
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- `app/` — Expo Router route entrypoints
+  - `app/(tabs)/index.tsx` — home dashboard
+  - `app/(tabs)/search.tsx` — search screen
+  - `app/details.tsx` — show detail and progress screen
+  - `app/_layout.tsx` — root stack layout and provider wrapping
+  - `app/(tabs)/_layout.tsx` — bottom tab layout
+- `hooks/use-shows.tsx` — shared subscription state and helpers
+- `components/` — reusable UI components and themed wrappers
+- `assets/` — images and static assets
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Installation
 
-## Get a fresh project
-
-When you're ready, run:
+Install dependencies:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Start the Expo development server:
 
-## Learn more
+```bash
+npm start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Useful commands
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `npm run android` — open on Android emulator/device
+- `npm run ios` — open on iOS simulator/device
+- `npm run web` — open in the browser
+- `npm run lint` — run Expo lint checks
 
-## Join the community
+## Notes
 
-Join our community of developers creating universal apps.
+- uses the TVMaze public API; no API key is required
+- subscriptions and watched progress are stored in app memory via `hooks/use-shows.tsx`
+- progress is not persisted across reloads in the current implementation
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Next improvements
+
+- persist subscription and progress data locally
+- support filtering aired vs upcoming episodes
+- improve recommendation logic for resumed watching
+- add offline caching for search results
+- add a more complete onboarding or tutorial flow
+
+## Tech stack
+
+- Expo SDK 54
+- `expo-router`
+- `react-native`
+- `expo-image`
+- `@react-navigation/bottom-tabs`
+- `react-native-reanimated`
+
+## License
+
+This project is private.
