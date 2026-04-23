@@ -28,6 +28,7 @@ type ShowsContextValue = {
   loading: boolean;
   subscribeShow: (show: Show) => void;
   unsubscribeShow: (showId: string) => void;
+  clearAccountData: (email?: string | null) => Promise<void>;
   isSubscribed: (showId: string) => boolean;
   getShowById: (showId: string) => Show | undefined;
 };
@@ -146,6 +147,24 @@ export function ShowsProvider({ children }: { children: React.ReactNode }) {
     [persistShows],
   );
 
+  const clearAccountData = useCallback(async (email?: string | null) => {
+    const accountKey = getAccountKey(email ?? user?.email);
+
+    if (!accountKey) {
+      return;
+    }
+
+    try {
+      const store = await readShowStore();
+      if (store[accountKey]) {
+        delete store[accountKey];
+        showsStoreFile.write(JSON.stringify(store, null, 2));
+      }
+    } catch (error) {
+      console.error(`Failed to clear local shows for ${accountKey}`, error);
+    }
+  }, [user?.email]);
+
   const isSubscribed = useCallback(
     (showId: string) => subscribedShows.some((show) => show.id === showId),
     [subscribedShows],
@@ -162,10 +181,11 @@ export function ShowsProvider({ children }: { children: React.ReactNode }) {
       loading: loading || authLoading,
       subscribeShow,
       unsubscribeShow,
+      clearAccountData,
       isSubscribed,
       getShowById,
     }),
-    [authLoading, getShowById, isSubscribed, loading, subscribeShow, subscribedShows, unsubscribeShow],
+    [authLoading, clearAccountData, getShowById, isSubscribed, loading, subscribeShow, subscribedShows, unsubscribeShow],
   );
 
   return <ShowsContext.Provider value={value}>{children}</ShowsContext.Provider>;

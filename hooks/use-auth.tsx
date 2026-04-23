@@ -1,5 +1,6 @@
 import {
     createUserWithEmailAndPassword,
+    deleteUser,
     signOut as firebaseSignOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
@@ -16,6 +17,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -42,13 +44,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await sendPasswordResetEmail(auth, email.trim());
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    if (!auth.currentUser) {
+      throw new Error('No signed-in account found.');
+    }
+
+    await deleteUser(auth.currentUser);
+  }, []);
+
   const signOut = useCallback(async () => {
     await firebaseSignOut(auth);
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signUp, resetPassword, signOut }),
-    [loading, resetPassword, signIn, signOut, signUp, user],
+    () => ({ user, loading, signIn, signUp, resetPassword, deleteAccount, signOut }),
+    [deleteAccount, loading, resetPassword, signIn, signOut, signUp, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

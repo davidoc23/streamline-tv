@@ -1,1 +1,1 @@
-export { useColorScheme } from 'react-native';
+export { resetColorSchemePreference, setColorSchemePreference, useColorScheme, useColorSchemePreference } from './use-color-scheme.shared';

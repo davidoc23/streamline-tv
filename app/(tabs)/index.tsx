@@ -33,7 +33,7 @@ export default function HomeScreen() {
 
     if (show.nextEpisode) {
       if (show.nextEpisode.toLowerCase().includes('you have watched all episodes')) {
-        return 'All caught up — check again later';
+        return 'You have watched all episodes.';
       }
       return show.nextEpisode;
     }
