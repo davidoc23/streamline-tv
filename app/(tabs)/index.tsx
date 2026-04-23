@@ -11,8 +11,9 @@ import { useShows } from '@/hooks/use-shows';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, firstName, signOut } = useAuth();
   const { subscribedShows, loading } = useShows();
+  const greetingName = firstName || 'there';
 
   const isFutureAirdate = (airdate?: string) => {
     if (!airdate) {
@@ -67,26 +68,14 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">StreamlineTV</ThemedText>
-        <HelloWave />
-      </ThemedView>
-
-      <ThemedView style={styles.accountBar}>
-        <View style={styles.accountCopy}>
-          <ThemedText type="defaultSemiBold">Signed in as</ThemedText>
-          <ThemedText>{user?.email ?? 'Unknown account'}</ThemedText>
+        <View style={styles.titleCopy}>
+          <ThemedText style={styles.greeting}>Hello, {greetingName}</ThemedText> 
         </View>
-        <Pressable onPress={signOut} style={styles.signOutButton}>
-          <ThemedText type="defaultSemiBold">Sign out</ThemedText>
-        </Pressable>
+        <HelloWave />
       </ThemedView>
 
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle">Your subscribed shows</ThemedText>
-        <ThemedText>
-          This dashboard brings your watchlist into one place, with new episode badges and
-          continue-watching status.
-        </ThemedText>
       </ThemedView>
 
       {loading ? (
@@ -141,7 +130,17 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  titleCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  greeting: {
+    fontSize: 18,
+    fontWeight: '600',
+    opacity: 0.8,
   },
   section: {
     gap: 8,

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,10 +15,16 @@ import { useShows } from '@/hooks/use-shows';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, deleteAccount, signOut } = useAuth();
+  const { user, firstName, updateFirstName, deleteAccount, signOut } = useAuth();
   const { clearAccountData } = useShows();
   const appliedScheme = useColorScheme();
   const preference = useColorSchemePreference();
+  const [firstNameDraft, setFirstNameDraft] = useState(firstName ?? '');
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    setFirstNameDraft(firstName ?? '');
+  }, [firstName]);
 
   const handleDeleteAccount = async () => {
     const accountEmail = user?.email ?? null;
@@ -52,6 +59,24 @@ export default function SettingsScreen() {
     { label: 'Light', value: 'light' },
     { label: 'Dark', value: 'dark' },
   ];
+
+  const handleSaveFirstName = async () => {
+    if (!firstNameDraft.trim()) {
+      Alert.alert('First name required', 'Enter a first name before saving.');
+      return;
+    }
+
+    setSavingName(true);
+
+    try {
+      await updateFirstName(firstNameDraft);
+      Alert.alert('Saved', 'Your first name has been updated.');
+    } catch (error) {
+      Alert.alert('Unable to update first name', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -130,6 +155,33 @@ export default function SettingsScreen() {
         </View>
         <ThemedView style={styles.groupCard}>
           <View style={styles.groupRows}>
+            <View style={styles.nameEditor}>
+              <ThemedText type="defaultSemiBold">First name</ThemedText>
+              <TextInput
+                autoCapitalize="words"
+                placeholder="Your first name"
+                placeholderTextColor="#7a7a7a"
+                value={firstNameDraft}
+                onChangeText={setFirstNameDraft}
+                style={styles.input}
+              />
+              <Pressable
+                accessibilityRole="button"
+                android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
+                onPress={() => void handleSaveFirstName()}
+                disabled={savingName}
+                style={({ pressed }) => [
+                  styles.saveNameButton,
+                  pressed ? styles.rowButtonPressed : undefined,
+                  savingName ? styles.saveNameButtonDisabled : undefined,
+                ]}
+              >
+                <ThemedText type="defaultSemiBold">
+                  {savingName ? 'Saving…' : 'Save name'}
+                </ThemedText>
+              </Pressable>
+            </View>
+
             <Pressable
               accessibilityRole="button"
               android_ripple={{ color: 'rgba(255,255,255,0.14)' }}
@@ -137,7 +189,6 @@ export default function SettingsScreen() {
               style={({ pressed }) => [styles.rowButton, pressed ? styles.rowButtonPressed : undefined]}
             >
               <View style={styles.rowTextBlock}>
-                <ThemedText type="defaultSemiBold">Signed in as</ThemedText>
                 <ThemedText style={styles.rowBody}>{user?.email ?? 'No signed-in account found.'}</ThemedText>
               </View>
               <View style={styles.rowTrailing}>
@@ -205,6 +256,31 @@ const styles = StyleSheet.create({
   groupRows: {
     gap: 1,
     backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  nameEditor: {
+    gap: 10,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  input: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    paddingHorizontal: 14,
+    color: '#111111',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  saveNameButton: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: '#0a7ea4',
+  },
+  saveNameButtonDisabled: {
+    opacity: 0.7,
   },
   rowButton: {
     alignSelf: 'stretch',

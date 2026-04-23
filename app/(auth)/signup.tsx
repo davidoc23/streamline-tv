@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/use-auth';
 export default function SignupScreen() {
   const router = useRouter();
   const { user, loading, signUp } = useAuth();
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +21,7 @@ export default function SignupScreen() {
   }
 
   const handleSignup = async () => {
-    if (!email.trim() || !password || !confirmPassword) {
+    if (!firstName.trim() || !email.trim() || !password || !confirmPassword) {
       setError('Fill in all fields to create your account.');
       return;
     }
@@ -34,7 +35,7 @@ export default function SignupScreen() {
     setError(null);
 
     try {
-      await signUp(email, password);
+      await signUp(email, password, firstName);
       router.replace('/(tabs)');
     } catch (signupError) {
       setError(signupError instanceof Error ? signupError.message : 'Unable to sign up.');
@@ -56,6 +57,19 @@ export default function SignupScreen() {
         </View>
       }
     >
+      <View style={styles.field}>
+        <ThemedText type="defaultSemiBold">First name</ThemedText>
+        <TextInput
+          autoCapitalize="words"
+          autoComplete="name"
+          placeholder="Your first name"
+          placeholderTextColor="#7a7a7a"
+          value={firstName}
+          onChangeText={setFirstName}
+          style={styles.input}
+        />
+      </View>
+
       <View style={styles.field}>
         <ThemedText type="defaultSemiBold">Email</ThemedText>
         <TextInput
